@@ -1,103 +1,77 @@
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 typedef struct {
     char *key;
     char *value;
-} object;
+} entry;
 
 typedef struct {
     int size;
-    int num_buckets;
     float load_factor;
-    object **entries;
+    int num_buckets;
+    entry** entries;
 } hashtable;
-
-void
-hash(hashtable *ht, int*pos, char *key) {
-    int MODULUS = ht->num_buckets;
-    int sol = 0;
-    int i;
-    for (i = 0; i < strlen(key); i++) {
-        sol += (key[i] << 8 * i);
-    }
-    *pos = sol % MODULUS;
-    *(pos + 1) = (sol / MODULUS) % MODULUS;
-}
 
 hashtable *
 init_hashtable(int size) {
-    hashtable *initted = malloc(sizeof(hashtable));
-    initted->size = 0;
-    initted->num_buckets = size;
-    initted->load_factor = 0.75;
-    initted->entries = malloc(sizeof(object*) * size);
+    hashtable *init = malloc(sizeof(hashtable));
+    init->size = size;
+    init->num_buckets = 0;
+    init->load_factor = 0.5;
+    init->entries = malloc(size * sizeof(entry*));
     int i;
-    for (i = 0; i < size; i++) {
-        initted->entries[i] = NULL;
+    for(i = 0; i < size; i++) {
+        init->entries[i] = NULL;
     }
-    return initted;
+    return init;
 }
 
 char *
-get(hashtable * ht, char * key) {
-    int hashed[2] = {0,0};
-    hash(ht, hashed, key);
-    int index = *hashed;
-    object kv = ht->entries[index];
-    if (kv != NULL && !strcmp(kv.key, key)) {
-        return kv.value;
-    }
-    index = *(hashed + 1);
-    kv = ht->entries[index];
-    if (kv != NULL & !strcmp(kv.key, key)) {
-        return kv.value;
+get(hashtable *table, char *key) {
+    int hasher[] = {0,0}; 
+    hash(key, hasher);
+    for (int i = 0; i < 2; i++) {
+        if (table->entries[hasher[0]] != NULL) {
+            entry *buck = table->entries[hasher[0]];
+            if (!strcmp(buck->key, key)) {
+                return buck->value;
+            }
+        }
     }
     return NULL;
 }
 
 int
-delete(hashtable * ht, char * key) {
-    int hashed[2] = {0,0};
-    hash(ht, hashed, key);
-    int index = *hashed;
-    object *kv = ht->entries[index];
-    if (kv != NULL && !strcmp(kv.key, key)) {
-        ht->entries[index] = NULL;
-        return 1;
-    }
-    index = *(hashed + 1);
-    kv = ht->entries[index];
-    if (kv != NULL & !strcmp(kv.key, key)) {
-        ht->entries[index] = NULL;
-        return 1;
+delete(hashtable *table, char *key) {
+    int hasher[] = {0,0}; 
+    hash(key, hasher);
+    for (int i = 0; i < 2; i++) {
+        if (table->entries[hasher[0]] != NULL) {
+            entry *buck = table->entries[hasher[0]];
+            if (!strcmp(buck->key, key)) {
+                buck = NULL;
+                return 1;
+            }
+        }
     }
     return 0;
 }
 
-void
-insert(hashtable * ht, char * key, char *value) {
-    int hashed[2] = {0,0};
-    hash(ht, hashed, key);
-    object *new = {key, value};
-    if (ht->entries(*hashed) == NULL) {
-        ht->entries(*hashed) = new;
-        return;
+
+int
+insert(hashtable *table, char *key, char *value) {
+    int hasher[] = {0,0}; 
+    hash(key, hasher);
+    
+}
+
+int
+main() {
+    hashtable *hasher =init_hashtable(8);
+    if (hasher->entries[7] == NULL) {
+        printf("yes\n");
     }
-    if (ht->entries(*(hashed + 1)) == NULL) {
-        ht->entries(*(hashed + 1)) = new;
-        return;
-    }
-    int picker = 0;
-    object temp;
-    while (1) {
-        temp = ht->entries(*(hashed + picker));
-        ht->entries(*(hashed + picker)) = new;
-        if (temp == NULL) {
-            break;
-        }
-        new = temp;
-        hash(ht, hashed, new.key);
-    }
+    return 0;
 }
