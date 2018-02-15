@@ -30,11 +30,11 @@ init_hashtable(int size) {
 
 char *
 get(hashtable *table, char *key) {
-    int hasher[] = {0,0}; 
+    int hasher[] = {0,0};
     hash(key, hasher);
     for (int i = 0; i < 2; i++) {
-        if (table->entries[hasher[0]] != NULL) {
-            entry *buck = table->entries[hasher[0]];
+        if (table->entries[hasher[i]] != NULL) {
+            entry *buck = table->entries[hasher[i]];
             if (!strcmp(buck->key, key)) {
                 return buck->value;
             }
@@ -45,13 +45,14 @@ get(hashtable *table, char *key) {
 
 int
 delete(hashtable *table, char *key) {
-    int hasher[] = {0,0}; 
+    int hasher[] = {0,0};
     hash(key, hasher);
     for (int i = 0; i < 2; i++) {
-        if (table->entries[hasher[0]] != NULL) {
-            entry *buck = table->entries[hasher[0]];
+        if (table->entries[hasher[i]] != NULL) {
+            entry *buck = table->entries[hasher[i]];
             if (!strcmp(buck->key, key)) {
                 buck = NULL;
+                table->num_buckets --;
                 return 1;
             }
         }
@@ -62,9 +63,14 @@ delete(hashtable *table, char *key) {
 
 int
 insert(hashtable *table, char *key, char *value) {
-    int hasher[] = {0,0}; 
+    int hasher[] = {0,0};
     hash(key, hasher);
-    
+    for (int i = 0; i < 2; i++) {
+        if (table->entries[hasher[i]] == NULL) {
+            *table->entries[hasher[i]] = entry{key, value};
+            return 1;
+        }
+    }
 }
 
 int
