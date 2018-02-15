@@ -21,7 +21,7 @@ typedef struct {
  */
 void
 hash(char *key, int *res, int size) {
-    uint32_t  hashed = 0;
+    uint64_t  hashed = 0;
     for (int i = 0; i < strlen(key); i++) {
         hashed += key[i] << (8* i);
     }
@@ -51,7 +51,7 @@ init_hashtable(int size) {
 char *
 get(hashtable *table, char *key) {
     int hasher[] = {0,0};
-    hash(key, hasher);
+    hash(key, hasher, table->size);
     for (int i = 0; i < 2; i++) {
         if (table->entries[i][hasher[i]] != NULL) {
             entry *buck = table->entries[i][hasher[i]];
@@ -66,7 +66,7 @@ get(hashtable *table, char *key) {
 int
 delete(hashtable *table, char *key) {
     int hasher[] = {0,0};
-    hash(key, hasher);
+    hash(key, hasher, table->size);
     for (int i = 0; i < 2; i++) {
         if (table->entries[i][hasher[i]] != NULL) {
             entry *buck = table->entries[i][hasher[i]];
@@ -80,14 +80,13 @@ delete(hashtable *table, char *key) {
     return 0;
 }
 
-
 int
 insert(hashtable *table, char *key, char *value) {
     int hasher[] = {0,0};
-    hash(key, hasher);
+    hash(key, hasher, table->size);
     for (int i = 0; i < 2; i++) {
         if (table->entries[i][hasher[i]] == NULL) {
-            *table->entries[i][hasher[i]] = entry{key, value};
+            *(table->entries[i][hasher[i]]) = (entry){key, value};
             return 1;
         } else {
             if (!strcmp(table->entries[i][hasher[i]]->key, key)) {
@@ -101,19 +100,19 @@ insert(hashtable *table, char *key, char *value) {
     entry *curr_entry;
     int i = 0;
     while (1) {
-        curr_entry = table->entries[i % 2][hasher[i % 2]]
+        curr_entry = table->entries[i % 2][hasher[i % 2]];
         if (curr_entry != NULL) {
             temp_key = curr_entry->key;
             temp_value = curr_entry->value;
         }
-        *table->entries[hasher[i %2]] = key;
-        *table->entries[hasher[i %2]] = value;
+        table->entries[hasher[i %2]]->key = key;
+        table->entries[hasher[i %2]]->value = value;
         if (curr_entry == NULL) {
             return 1;
         }
         key = temp_key;
         value = temp_value;
-        hash(key, hasher);
+        hash(key, hasher, table->size);
         i++;
     }
 }
