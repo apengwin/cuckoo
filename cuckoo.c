@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 typedef struct {
     char *key;
@@ -14,6 +15,20 @@ typedef struct {
     // lmao
     entry*** entries;
 } hashtable;
+
+/**
+ * Stupid hacky hash
+ */
+void
+hash(char *key, int *res, int size) {
+    uint32_t  hashed = 0;
+    for (int i = 0; i < strlen(key); i++) {
+        hashed += key[i] << (8* i);
+    }
+   *res = hashed / size;
+   *(res + 1) = (hashed / size) % size;
+}
+
 
 hashtable *
 init_hashtable(int size) {
