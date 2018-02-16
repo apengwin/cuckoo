@@ -105,8 +105,8 @@ insert(hashtable *table, char *key, char *value) {
             temp_key = curr_entry->key;
             temp_value = curr_entry->value;
         }
-        table->entries[hasher[i %2]]->key = key;
-        table->entries[hasher[i %2]]->value = value;
+        table->entries[i % 2][hasher[i %2]]->key = key;
+        table->entries[i % 2][hasher[i %2]]->value = value;
         if (curr_entry == NULL) {
             return 1;
         }
