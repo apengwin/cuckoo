@@ -1,20 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
-
-typedef struct {
-    char *key;
-    char *value;
-} entry;
-
-typedef struct {
-    int size;
-    float load_factor;
-    int num_buckets;
-    // lmao
-    entry*** entries;
-} hashtable;
+#include "cuckoo.h"
 
 /**
  * Stupid hacky hash
@@ -25,7 +9,7 @@ hash(char *key, int *res, int size) {
     for (int i = 0; i < strlen(key); i++) {
         hashed += key[i] << (8* i);
     }
-   *res = hashed / size;
+   *res = hashed % size;
    *(res + 1) = (hashed / size) % size;
 }
 
@@ -48,19 +32,40 @@ init_hashtable(int size) {
     return init;
 }
 
-char *
-get(hashtable *table, char *key) {
+void
+resize(hashtable *table) {
+    hashtable *new_table = init_hashtable(table->size * 2);
+    int i;
+    int j;
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < table->size; j++) {
+            if (table->entries[i][j] != NULL) {
+                put(new_table, table->entries[i][j]->key, table->entries[i][j]->value);
+                free(table->entries[i][j]);
+            }
+        }
+        free(table->entries[i]);
+    }
+    free(table->entries);
+    free(table);
+    *(&table) = new_table;
+}
+
+
+int
+get(hashtable *table, char *key, char **value) {
     int hasher[] = {0,0};
     hash(key, hasher, table->size);
     for (int i = 0; i < 2; i++) {
         if (table->entries[i][hasher[i]] != NULL) {
             entry *buck = table->entries[i][hasher[i]];
             if (!strcmp(buck->key, key)) {
-                return buck->value;
+                *value = buck->value;
+                return 1;
             }
         }
     }
-    return NULL;
+    return 0;
 }
 
 int
@@ -71,7 +76,9 @@ delete(hashtable *table, char *key) {
         if (table->entries[i][hasher[i]] != NULL) {
             entry *buck = table->entries[i][hasher[i]];
             if (!strcmp(buck->key, key)) {
-                *(&buck) = NULL;
+                free(buck);
+                table->entries[i][hasher[i]] = NULL;
+                //should free sometime...
                 table->num_buckets --;
                 return 1;
             }
@@ -81,12 +88,19 @@ delete(hashtable *table, char *key) {
 }
 
 int
-insert(hashtable *table, char *key, char *value) {
+put(hashtable *table, char *key, char *value) {
+    if (table->num_buckets > table->load_factor * table->size * 2) {
+        resize(table);
+    }
     int hasher[] = {0,0};
     hash(key, hasher, table->size);
     for (int i = 0; i < 2; i++) {
         if (table->entries[i][hasher[i]] == NULL) {
-            *(table->entries[i][hasher[i]]) = (entry){key, value};
+            entry *new_struct = malloc(sizeof(entry));
+            new_struct->key = key;
+            new_struct->value = value;
+            table->entries[i][hasher[i]] = new_struct;
+            table->num_buckets++;
             return 1;
         } else {
             if (!strcmp(table->entries[i][hasher[i]]->key, key)) {
@@ -101,15 +115,19 @@ insert(hashtable *table, char *key, char *value) {
     int i = 0;
     while (1) {
         curr_entry = table->entries[i % 2][hasher[i % 2]];
-        if (curr_entry != NULL) {
-            temp_key = curr_entry->key;
-            temp_value = curr_entry->value;
-        }
-        table->entries[i % 2][hasher[i %2]]->key = key;
-        table->entries[i % 2][hasher[i %2]]->value = value;
         if (curr_entry == NULL) {
+            entry *new_struct = malloc(sizeof(entry));
+            new_struct->key = key;
+            new_struct->value = value;
+            table->entries[i % 2 ][hasher[i % 2]] = new_struct;
+            table->num_buckets++;
             return 1;
         }
+        temp_key = curr_entry->key;
+        temp_value = curr_entry->value;
+        table->entries[i % 2][hasher[i %2]]->key = key;
+        table->entries[i % 2][hasher[i %2]]->value = value;
+
         key = temp_key;
         value = temp_value;
         hash(key, hasher, table->size);
@@ -119,9 +137,12 @@ insert(hashtable *table, char *key, char *value) {
 
 int
 main() {
-    hashtable *hasher =init_hashtable(8);
-    if (hasher->entries[7] == NULL) {
-        printf("yes\n");
-    }
+    hashtable *hasher = init_hashtable(8);
+    put(hasher, "a", "b");
+    put(hasher, "b", "c");
+    put(hasher, "c", "b");
+    put(hasher, "d", "c");
+    put(hasher, "u", "c");
+    delete(hasher, "u");
     return 0;
 }
