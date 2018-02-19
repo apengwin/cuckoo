@@ -1,9 +1,7 @@
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-
 #include "cuckoo.h"
 
 /**
@@ -39,8 +37,7 @@ init_hashtable(int size) {
 }
 
 int
-_put(entry ***entries, char *key, char *value) {
-    int SIZE = sizeof(*entries) / sizeof(**entries);
+_put(entry ***entries, char *key, char *value, int SIZE) {
     int hasher[] = {0,0};
     hash(key, hasher, SIZE);
     for (int i = 0; i < 2; i++) {
@@ -70,6 +67,9 @@ _put(entry ***entries, char *key, char *value) {
             entries[i % 2 ][hasher[i % 2]] = new_struct;
             return 1;
         }
+        if (i >= SIZE) {
+            //resize;
+        }
         temp_key = curr_entry->key;
         temp_value = curr_entry->value;
         entries[i % 2][hasher[i %2]]->key = key;
@@ -97,7 +97,7 @@ resize(hashtable *table) {
     for (i = 0; i < 2; i++) {
         for (j = 0; j < table->size; j++) {
             if (table->entries[i][j] != NULL) {
-                _put(new_entry, table->entries[i][j]->key, table->entries[i][j]->value);
+                _put(new_entry, table->entries[i][j]->key, table->entries[i][j]->value, 2 * table->size);
                 free(table->entries[i][j]);
             }
         }
@@ -106,7 +106,6 @@ resize(hashtable *table) {
     free(table->entries);
     table->entries = new_entry;
 }
-
 
 int
 get(hashtable *table, char *key, char **value) {
@@ -134,7 +133,6 @@ delete(hashtable *table, char *key) {
             if (!strcmp(buck->key, key)) {
                 free(buck);
                 table->entries[i][hasher[i]] = NULL;
-                //should free sometime...
                 table->num_buckets --;
                 return 1;
             }
@@ -146,9 +144,10 @@ delete(hashtable *table, char *key) {
 int
 put(hashtable *table, char *key, char *value) {
     if (table->num_buckets > table->load_factor * table->size * 2) {
+        printf("%s\n", "resizing...");
         resize(table);
     }
-    table->size += _put(table->entries, key, value);
+    table->num_buckets += _put(table->entries, key, value, table->size);
     return 1;
 }
 
