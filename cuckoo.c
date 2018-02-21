@@ -116,7 +116,6 @@ get(hashtable *table, char *key, char **value) {
         if (table->entries[i][hasher[i]] != NULL) {
             entry *buck = table->entries[i][hasher[i]];
             if (!strcmp(buck->key, key)) {
-                printf("hi\n");
                 *value = buck->value;
                 return 1;
             }
@@ -172,7 +171,7 @@ main() {
     put(hasher, "c", "b");
     put(hasher, "u", "c");
     delete(hasher, "u");
-    printf("%d\n", get(hasher, "u", &result2));
+    printf("%d\n", get(hasher, "u", &result));
     printf("%s\n", result2);
     printf("%d\n", get(hasher, "c", &result3));
     printf("%s\n", result3);
