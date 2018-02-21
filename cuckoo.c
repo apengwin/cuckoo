@@ -68,7 +68,7 @@ _put(entry ***entries, char *key, char *value, int SIZE) {
             return 1;
         }
         if (i >= SIZE) {
-            //resize;
+            return -1;
         }
         temp_key = curr_entry->key;
         temp_value = curr_entry->value;
@@ -104,6 +104,7 @@ resize(hashtable *table) {
         free(table->entries[i]);
     }
     free(table->entries);
+    table->size *= 2;
     table->entries = new_entry;
 }
 
@@ -115,6 +116,7 @@ get(hashtable *table, char *key, char **value) {
         if (table->entries[i][hasher[i]] != NULL) {
             entry *buck = table->entries[i][hasher[i]];
             if (!strcmp(buck->key, key)) {
+                printf("hi\n");
                 *value = buck->value;
                 return 1;
             }
@@ -133,7 +135,7 @@ delete(hashtable *table, char *key) {
             if (!strcmp(buck->key, key)) {
                 free(buck);
                 table->entries[i][hasher[i]] = NULL;
-                table->num_buckets --;
+                table->num_buckets--;
                 return 1;
             }
         }
@@ -147,18 +149,32 @@ put(hashtable *table, char *key, char *value) {
         printf("%s\n", "resizing...");
         resize(table);
     }
-    table->num_buckets += _put(table->entries, key, value, table->size);
-    return 1;
+    int result;
+    while (1) {
+        if ((result = _put(table->entries, key, value, table->size)) > -1) {
+            table->num_buckets += result;
+            return 1;
+        };
+    }
 }
 
 int
 main() {
-    hashtable *hasher = init_hashtable(8);
+    hashtable *hasher = init_hashtable(3);
+    char *result;
+    char *result2;
+    char *result3;
+    put(hasher, "d", "c");
+    get(hasher, "d", &result);
+    printf("%s\n", result);
     put(hasher, "a", "b");
     put(hasher, "b", "c");
     put(hasher, "c", "b");
-    put(hasher, "d", "c");
     put(hasher, "u", "c");
     delete(hasher, "u");
+    printf("%d\n", get(hasher, "u", &result2));
+    printf("%s\n", result2);
+    printf("%d\n", get(hasher, "c", &result3));
+    printf("%s\n", result3);
     return 0;
 }
