@@ -5,10 +5,10 @@ typedef struct {
 } entry;
 
 typedef struct {
+    // I fucked up and mixed up the definitions of size and num_buckets. Oh well.
     int size;
     float load_factor;
     int num_buckets;
-    // lmao
     entry*** entries;
 } hashtable;
 
